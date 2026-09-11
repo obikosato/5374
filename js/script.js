@@ -371,6 +371,7 @@ $(function() {
 
   var suppressHashUpdate = false;
   var initialLoad = true;
+  var navigatedFromHash = false;
 
   function getShortName(label) {
     return label.split(" ")[0];
@@ -390,7 +391,9 @@ $(function() {
   }
 
   function setSelectedAreaName(name) {
-    localStorage.setItem("selected_area_name", name);
+    if (!navigatedFromHash) {
+      localStorage.setItem("selected_area_name", name);
+    }
     if (suppressHashUpdate) return;
     var method = initialLoad ? "replaceState" : "pushState";
     if (name) {
@@ -461,6 +464,7 @@ $(function() {
         var hashName = getAreaNameFromHash();
         var hashIndex = hashName ? getAreaIndex(hashName, true) : -1;
         var selected_name = (hashIndex != -1) ? areaModels[hashIndex].label : getSelectedAreaName();
+        if (hashIndex != -1) navigatedFromHash = true;
         var area_select_form = $("#select_area");
         var select_html = "";
         select_html += '<option value="-1">地域を選択してください</option>';
@@ -479,6 +483,7 @@ $(function() {
         area_select_form.html(select_html);
         area_select_form.change();
         initialLoad = false;
+        navigatedFromHash = false;
       });
     });
   }
@@ -729,9 +734,11 @@ $(function() {
       if (hashName) {
         var index = getAreaIndex(hashName, true);
         if (index != -1) {
+          navigatedFromHash = true;
           $("#select_area").val(index).change();
         }
       } else {
+        navigatedFromHash = false;
         $("#select_area").val("-1").change();
       }
     } finally {
