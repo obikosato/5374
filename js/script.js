@@ -724,13 +724,16 @@ $(function() {
   }
   $(window).on("hashchange", function() {
     var hashName = getAreaNameFromHash();
-    if (hashName) {
-      var index = getAreaIndex(hashName, true);
-      if (index != -1) {
-        suppressHashUpdate = true;
-        $("#select_area").val(index).change();
-        suppressHashUpdate = false;
+    suppressHashUpdate = true;
+    try {
+      if (hashName) {
+        var index = getAreaIndex(hashName, true);
+        if (index != -1) {
+          $("#select_area").val(index).change();
+        }
       }
+    } finally {
+      suppressHashUpdate = false;
     }
   });
 
