@@ -447,10 +447,6 @@ $(function() {
           select_html += '<option value="' + row_index + '" ' + selected + " >" + area_name + "</option>";
         }
 
-        //デバッグ用
-        if (typeof dump == "function") {
-          dump(areaModels);
-        }
         //HTMLへの適応
         area_select_form.html(select_html);
         area_select_form.change();
@@ -650,51 +646,9 @@ $(function() {
     onChangeSelect(row_index);
   });
 
-  //-----------------------------------
-  //位置情報をもとに地域を自動的に設定する処理です。
-  //これから下は現在、利用されておりません。
-  //将来的に使うかもしれないので残してあります。
-  $("#gps_area").click(function() {
-    navigator.geolocation.getCurrentPosition(function(position) {
-      $.getJSON("area_candidate.php", {
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude
-      }, function(data) {
-        if (data.result == true) {
-          var area_name = data.candidate;
-          var index = getAreaIndex(area_name);
-          $("#select_area").val(index).change();
-          alert(area_name + "が設定されました");
-        } else {
-          alert(data.reason);
-        }
-      })
-
-    }, function(error) {
-      alert(getGpsErrorMessage(error));
-    });
-  });
-
   if (getSelectedAreaName() == null) {
     $("#accordion2").show();
     $("#collapseZero").addClass("in");
-  }
-  if (!navigator.geolocation) {
-    $("#gps_area").css("display", "none");
-  }
-
-  function getGpsErrorMessage(error) {
-    switch (error.code) {
-      case error.PERMISSION_DENIED:
-        return "User denied the request for Geolocation."
-      case error.POSITION_UNAVAILABLE:
-        return "Location information is unavailable."
-      case error.TIMEOUT:
-        return "The request to get user location timed out."
-      case error.UNKNOWN_ERROR:
-      default:
-        return "An unknown error occurred."
-    }
   }
   updateAreaList();
 });
