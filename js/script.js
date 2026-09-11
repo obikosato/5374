@@ -385,15 +385,6 @@ $(function() {
     }
   }
 
-  function getAreaIndexByHash(hashName) {
-    for (var i in areaModels) {
-      if (getShortName(areaModels[i].label) === hashName) {
-        return i;
-      }
-    }
-    return -1;
-  }
-
   function getSelectedAreaName() {
     return localStorage.getItem("selected_area_name");
   }
@@ -468,7 +459,7 @@ $(function() {
         //エリアとゴミ処理センターを対応後に、表示のリストを生成する。
         //ListメニューのHTML作成
         var hashName = getAreaNameFromHash();
-        var hashIndex = hashName ? getAreaIndexByHash(hashName) : -1;
+        var hashIndex = hashName ? getAreaIndex(hashName, true) : -1;
         var selected_name = (hashIndex != -1) ? areaModels[hashIndex].label : getSelectedAreaName();
         var area_select_form = $("#select_area");
         var select_html = "";
@@ -670,9 +661,10 @@ $(function() {
 
 
 
-  function getAreaIndex(area_name) {
+  function getAreaIndex(area_name, useShortName) {
     for (var i in areaModels) {
-      if (areaModels[i].label == area_name) {
+      var target = useShortName ? getShortName(areaModels[i].label) : areaModels[i].label;
+      if (target == area_name) {
         return i;
       }
     }
@@ -733,7 +725,7 @@ $(function() {
   $(window).on("hashchange", function() {
     var hashName = getAreaNameFromHash();
     if (hashName) {
-      var index = getAreaIndexByHash(hashName);
+      var index = getAreaIndex(hashName, true);
       if (index != -1) {
         suppressHashUpdate = true;
         $("#select_area").val(index).change();
