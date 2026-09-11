@@ -369,6 +369,30 @@ $(function() {
   var remarks = new Array();
 /*   var descriptions = new Array(); */
 
+  var suppressHashUpdate = false;
+  var initialLoad = true;
+
+  function getShortName(label) {
+    return label.split(" ")[0];
+  }
+
+  function getAreaNameFromHash() {
+    var raw = location.hash.substring(1);
+    try {
+      return decodeURIComponent(raw) || null;
+    } catch (e) {
+      return raw || null;
+    }
+  }
+
+  function getAreaIndexByHash(hashName) {
+    for (var i in areaModels) {
+      if (getShortName(areaModels[i].label) === hashName) {
+        return i;
+      }
+    }
+    return -1;
+  }
 
   function getSelectedAreaName() {
     return localStorage.getItem("selected_area_name");
@@ -376,6 +400,13 @@ $(function() {
 
   function setSelectedAreaName(name) {
     localStorage.setItem("selected_area_name", name);
+    if (suppressHashUpdate) return;
+    var method = initialLoad ? "replaceState" : "pushState";
+    if (name) {
+      history[method](null, "", "#" + getShortName(name));
+    } else {
+      history[method](null, "", location.pathname + location.search);
+    }
   }
 
   function csvToArray(filename, cb) {
@@ -436,7 +467,9 @@ $(function() {
         };
         //エリアとゴミ処理センターを対応後に、表示のリストを生成する。
         //ListメニューのHTML作成
-        var selected_name = getSelectedAreaName();
+        var hashName = getAreaNameFromHash();
+        var hashIndex = hashName ? getAreaIndexByHash(hashName) : -1;
+        var selected_name = (hashIndex != -1) ? areaModels[hashIndex].label : getSelectedAreaName();
         var area_select_form = $("#select_area");
         var select_html = "";
         select_html += '<option value="-1">地域を選択してください</option>';
@@ -454,6 +487,7 @@ $(function() {
         //HTMLへの適応
         area_select_form.html(select_html);
         area_select_form.change();
+        initialLoad = false;
       });
     });
   }
@@ -696,5 +730,17 @@ $(function() {
         return "An unknown error occurred."
     }
   }
+  $(window).on("hashchange", function() {
+    var hashName = getAreaNameFromHash();
+    if (hashName) {
+      var index = getAreaIndexByHash(hashName);
+      if (index != -1) {
+        suppressHashUpdate = true;
+        $("#select_area").val(index).change();
+        suppressHashUpdate = false;
+      }
+    }
+  });
+
   updateAreaList();
 });
