@@ -731,6 +731,8 @@ $(function() {
         if (index != -1) {
           $("#select_area").val(index).change();
         }
+      } else {
+        $("#select_area").val("-1").change();
       }
     } finally {
       suppressHashUpdate = false;
