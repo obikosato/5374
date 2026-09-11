@@ -369,10 +369,6 @@ $(function() {
   var remarks = new Array();
 /*   var descriptions = new Array(); */
 
-  var suppressHashUpdate = false;
-  var initialLoad = true;
-  var navigatedFromHash = false;
-
   function getShortName(label) {
     return label.split(" ")[0];
   }
@@ -386,16 +382,24 @@ $(function() {
     }
   }
 
+  function resolveHashToAreaIndex() {
+    var hashName = getAreaNameFromHash();
+    if (!hashName) return -1;
+    return getAreaIndex(hashName, true);
+  }
+
   function getSelectedAreaName() {
     return localStorage.getItem("selected_area_name");
   }
 
-  function setSelectedAreaName(name) {
-    if (!navigatedFromHash) {
+  // options: { skipStorage: bool, skipHash: bool, replace: bool }
+  function setSelectedAreaName(name, options) {
+    var opts = options || {};
+    if (!opts.skipStorage) {
       localStorage.setItem("selected_area_name", name);
     }
-    if (suppressHashUpdate) return;
-    var method = initialLoad ? "replaceState" : "pushState";
+    if (opts.skipHash) return;
+    var method = opts.replace ? "replaceState" : "pushState";
     if (name) {
       history[method](null, "", "#" + getShortName(name));
     } else {
@@ -461,10 +465,9 @@ $(function() {
         };
         //エリアとゴミ処理センターを対応後に、表示のリストを生成する。
         //ListメニューのHTML作成
-        var hashName = getAreaNameFromHash();
-        var hashIndex = hashName ? getAreaIndex(hashName, true) : -1;
-        var selected_name = (hashIndex != -1) ? areaModels[hashIndex].label : getSelectedAreaName();
-        if (hashIndex != -1) navigatedFromHash = true;
+        var hashIndex = resolveHashToAreaIndex();
+        var fromHash = (hashIndex != -1);
+        var selected_name = fromHash ? areaModels[hashIndex].label : getSelectedAreaName();
         var area_select_form = $("#select_area");
         var select_html = "";
         select_html += '<option value="-1">地域を選択してください</option>';
@@ -481,9 +484,8 @@ $(function() {
         }
         //HTMLへの適応
         area_select_form.html(select_html);
-        area_select_form.change();
-        initialLoad = false;
-        navigatedFromHash = false;
+        var initialIndex = area_select_form.val();
+        onChangeSelect(initialIndex, {replace: true, skipStorage: fromHash});
       });
     });
   }
@@ -646,13 +648,13 @@ $(function() {
     });
   }
 
-  function onChangeSelect(row_index) {
+  function onChangeSelect(row_index, options) {
     if (row_index == -1) {
       $("#accordion").html("");
-      setSelectedAreaName("");
+      setSelectedAreaName("", options);
       return;
     }
-    setSelectedAreaName(areaModels[row_index].label);
+    setSelectedAreaName(areaModels[row_index].label, options);
 
     if ($("#accordion").children().length === 0 && descriptions.length === 0) {
 
@@ -728,21 +730,13 @@ $(function() {
     }
   }
   $(window).on("hashchange", function() {
-    var hashName = getAreaNameFromHash();
-    suppressHashUpdate = true;
-    try {
-      if (hashName) {
-        var index = getAreaIndex(hashName, true);
-        if (index != -1) {
-          navigatedFromHash = true;
-          $("#select_area").val(index).change();
-        }
-      } else {
-        navigatedFromHash = false;
-        $("#select_area").val("-1").change();
-      }
-    } finally {
-      suppressHashUpdate = false;
+    var index = resolveHashToAreaIndex();
+    if (index != -1) {
+      $("#select_area").val(index);
+      onChangeSelect(index, {skipHash: true, skipStorage: true});
+    } else {
+      $("#select_area").val("-1");
+      onChangeSelect(-1, {skipHash: true, skipStorage: true});
     }
   });
 
